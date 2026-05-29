@@ -1,16 +1,9 @@
 import type { CSSProperties } from 'react';
-import {
-  COLOR_BG,
-  COLOR_BRAND,
-  COLOR_FG,
-  COLOR_KEY,
-  COLOR_KEY_TEXT,
-  COLOR_SHELL,
-  COLOR_SHELL_DARK,
-  COLOR_SHELL_LIGHT,
-} from './constants';
+import type { Palette } from './themes';
 
-export const styles: Record<string, CSSProperties> = {
+export type Styles = Record<string, CSSProperties>;
+
+export const makeStyles = (p: Palette): Styles => ({
   wrap: {
     minHeight: '100vh',
     width: '100%',
@@ -22,9 +15,8 @@ export const styles: Record<string, CSSProperties> = {
     gap: 24,
     padding: 16,
     boxSizing: 'border-box',
-    background:
-      'radial-gradient(circle at 50% 0%, #2a2f3a 0%, #0f1218 70%, #07090d 100%)',
-    color: COLOR_KEY_TEXT,
+    background: p.pageBg,
+    color: p.keyText,
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
   },
   sidePanel: {
@@ -40,14 +32,13 @@ export const styles: Record<string, CSSProperties> = {
     fontWeight: 700,
     letterSpacing: 3,
     textAlign: 'center',
-    color: COLOR_KEY_TEXT,
+    color: p.keyText,
     opacity: 0.85,
   },
-  // Plastic phone body: rounded "candybar" shape with subtle molded highlights.
   shell: {
     width: '100%',
     maxWidth: 360,
-    background: `linear-gradient(180deg, ${COLOR_SHELL_LIGHT} 0%, ${COLOR_SHELL} 35%, ${COLOR_SHELL_DARK} 100%)`,
+    background: `linear-gradient(180deg, ${p.shellLight} 0%, ${p.shell} 35%, ${p.shellDark} 100%)`,
     borderRadius: 38,
     padding: '20px 18px 26px',
     boxShadow: [
@@ -61,7 +52,6 @@ export const styles: Record<string, CSSProperties> = {
     gap: 12,
     position: 'relative',
   },
-  // "NOKIA" wordmark across the top of the phone.
   brandBar: {
     display: 'flex',
     justifyContent: 'center',
@@ -69,16 +59,15 @@ export const styles: Record<string, CSSProperties> = {
     padding: '2px 0 4px',
   },
   brand: {
-    color: COLOR_BRAND,
+    color: p.brand,
     fontFamily: 'Arial, Helvetica, sans-serif',
     fontWeight: 900,
     fontSize: 18,
     letterSpacing: 4,
     textShadow: '0 1px 0 rgba(0,0,0,0.6)',
   },
-  // Bezel around the LCD screen.
   screenBezel: {
-    background: COLOR_SHELL_DARK,
+    background: p.shellDark,
     borderRadius: 10,
     padding: 10,
     boxShadow: [
@@ -90,24 +79,20 @@ export const styles: Record<string, CSSProperties> = {
     flexDirection: 'column',
     gap: 8,
   },
-  canvasFrame: {
-    position: 'relative',
-    lineHeight: 0,
-  },
   canvasLeaderboardOverlay: {
     position: 'absolute',
     inset: 0,
     display: 'flex',
     flexDirection: 'column',
     padding: 10,
-    background: COLOR_BG,
-    color: COLOR_FG,
+    background: p.canvasBg,
+    color: p.canvasFg,
     boxSizing: 'border-box',
     overflow: 'hidden',
   },
   scoreboard: {
-    background: COLOR_BG,
-    color: COLOR_FG,
+    background: p.canvasBg,
+    color: p.canvasFg,
     borderRadius: 4,
     padding: '6px 10px',
     display: 'flex',
@@ -124,12 +109,12 @@ export const styles: Record<string, CSSProperties> = {
     fontSize: 10,
     padding: '2px 8px',
     borderRadius: 2,
-    background: COLOR_FG,
-    color: COLOR_BG,
+    background: p.canvasFg,
+    color: p.canvasBg,
     letterSpacing: 1,
   },
   canvasFrame: {
-    background: COLOR_BG,
+    background: p.canvasBg,
     padding: 6,
     borderRadius: 4,
     boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.35)',
@@ -149,12 +134,11 @@ export const styles: Record<string, CSSProperties> = {
     flexWrap: 'wrap',
     justifyContent: 'center',
   },
-  // Chunky plastic keys.
   btn: {
     flex: '1 1 90px',
     padding: '10px 12px',
-    background: `linear-gradient(180deg, ${COLOR_SHELL_LIGHT} 0%, ${COLOR_KEY} 100%)`,
-    color: COLOR_KEY_TEXT,
+    background: `linear-gradient(180deg, ${p.shellLight} 0%, ${p.key} 100%)`,
+    color: p.keyText,
     border: '1px solid #000',
     borderRadius: 8,
     fontWeight: 700,
@@ -173,8 +157,8 @@ export const styles: Record<string, CSSProperties> = {
     flex: '1 1 90px',
     padding: '10px 12px',
     background: 'transparent',
-    color: COLOR_KEY_TEXT,
-    border: `1px solid ${COLOR_KEY_TEXT}`,
+    color: p.keyText,
+    border: `1px solid ${p.keyText}`,
     borderRadius: 8,
     fontWeight: 700,
     letterSpacing: 1,
@@ -194,8 +178,8 @@ export const styles: Record<string, CSSProperties> = {
     userSelect: 'none',
   },
   dpadBtn: {
-    background: `linear-gradient(180deg, ${COLOR_SHELL_LIGHT} 0%, ${COLOR_KEY} 100%)`,
-    color: COLOR_KEY_TEXT,
+    background: `linear-gradient(180deg, ${p.shellLight} 0%, ${p.key} 100%)`,
+    color: p.keyText,
     border: '1px solid #000',
     borderRadius: 10,
     fontSize: 20,
@@ -212,7 +196,7 @@ export const styles: Record<string, CSSProperties> = {
   dpadCenter: {
     background:
       'radial-gradient(circle at 35% 30%, #e6e3d6 0%, #9c9886 70%, #6c6857 100%)',
-    color: COLOR_SHELL_DARK,
+    color: p.shellDark,
     border: '1px solid #000',
     borderRadius: 12,
     fontSize: 18,
@@ -232,11 +216,11 @@ export const styles: Record<string, CSSProperties> = {
     textAlign: 'center',
     marginTop: 6,
     letterSpacing: 1,
-    color: COLOR_KEY_TEXT,
+    color: p.keyText,
   },
   leaderboard: {
-    background: COLOR_BG,
-    color: COLOR_FG,
+    background: p.canvasBg,
+    color: p.canvasFg,
     borderRadius: 4,
     padding: '8px 10px',
     boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.35)',
@@ -277,7 +261,6 @@ export const styles: Record<string, CSSProperties> = {
   leaderboardRank: { opacity: 0.7 },
   leaderboardName: { textTransform: 'uppercase' },
   leaderboardScore: { fontVariantNumeric: 'tabular-nums' },
-  // ---------- In-app name prompt modal ----------
   modalOverlay: {
     position: 'fixed',
     inset: 0,
@@ -291,11 +274,11 @@ export const styles: Record<string, CSSProperties> = {
   modalCard: {
     width: '100%',
     maxWidth: 300,
-    background: COLOR_BG,
-    color: COLOR_FG,
+    background: p.modalBg,
+    color: p.modalFg,
     borderRadius: 6,
     padding: 16,
-    border: `2px solid ${COLOR_SHELL_DARK}`,
+    border: `2px solid ${p.modalBorder}`,
     boxShadow: [
       '0 12px 30px rgba(0,0,0,0.55)',
       'inset 0 0 0 1px rgba(0,0,0,0.35)',
@@ -334,9 +317,9 @@ export const styles: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     textAlign: 'center',
     fontFamily: 'inherit',
-    background: '#b6c195',
-    color: COLOR_FG,
-    border: `1px solid ${COLOR_SHELL_DARK}`,
+    background: p.modalInputBg,
+    color: p.modalFg,
+    border: `1px solid ${p.modalBorder}`,
     borderRadius: 4,
     outline: 'none',
   },
@@ -345,4 +328,4 @@ export const styles: Record<string, CSSProperties> = {
     gap: 8,
     marginTop: 4,
   },
-};
+});

@@ -5,13 +5,11 @@ import sjUrl from '../assets/sj.svg';
 import {
   CANVAS_PIXEL_SIZE,
   CELL_SIZE,
-  COLOR_BG,
-  COLOR_BG_DIM,
-  COLOR_FG,
   GRID_COLS,
   GRID_ROWS,
 } from '../constants';
-import { styles } from '../styles';
+import { useTheme } from '../ThemeContext';
+import type { Palette, ThemeName } from '../themes';
 import type { GameStatus, Obstacle, Point, PowerUp } from '../types';
 
 interface Props {
@@ -22,6 +20,8 @@ interface Props {
   boostActive: boolean;
   status: GameStatus;
   score: number;
+  themeName: ThemeName;
+  palette: Palette;
 }
 
 export const GameCanvas: React.FC<Props> = ({
@@ -32,7 +32,10 @@ export const GameCanvas: React.FC<Props> = ({
   boostActive,
   status,
   score,
+  themeName,
+  palette,
 }) => {
+  const { styles } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Preload the obstacle / power-up sprites once.
@@ -54,6 +57,8 @@ export const GameCanvas: React.FC<Props> = ({
   const boostRef = useRef(boostActive);
   const statusRef = useRef(status);
   const scoreRef = useRef(score);
+  const paletteRef = useRef(palette);
+  const themeRef = useRef(themeName);
   snakeRef.current = snake;
   foodRef.current = food;
   obstaclesRef.current = obstacles;
@@ -61,6 +66,8 @@ export const GameCanvas: React.FC<Props> = ({
   boostRef.current = boostActive;
   statusRef.current = status;
   scoreRef.current = score;
+  paletteRef.current = palette;
+  themeRef.current = themeName;
 
   // Remember when this food first appeared so we can do a "spawn pop".
   const foodSpawnRef = useRef<number>(performance.now());
@@ -89,20 +96,56 @@ export const GameCanvas: React.FC<Props> = ({
       return { x: Math.sign(dx), y: Math.sign(dy) };
     };
 
-    const drawBlock = (gx: number, gy: number) => {
-      const pad = 1;
-      ctx.fillStyle = COLOR_FG;
-      ctx.fillRect(
-        gx * CELL_SIZE + pad,
-        gy * CELL_SIZE + pad,
-        CELL_SIZE - pad * 2,
-        CELL_SIZE - pad * 2,
-      );
+    const fillRoundRect = (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      r: number,
+    ) => {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+      ctx.fill();
     };
 
-    // ----- Animated food: rotating diamond ring with a pulsing core and a
-    // sparkle, plus a brief scale-up "pop" when it first appears.
+    const drawBlock = (gx: number, gy: number) => {
+      const pal = paletteRef.current;
+      const tn = themeRef.current;
+      ctx.fillStyle = pal.canvasFg;
+      if (tn === 'MODERN') {
+        const pad = 1;
+        ctx.shadowColor = pal.canvasFg;
+        ctx.shadowBlur = 8;
+        fillRoundRect(
+          gx * CELL_SIZE + pad,
+          gy * CELL_SIZE + pad,
+          CELL_SIZE - pad * 2,
+          CELL_SIZE - pad * 2,
+          4,
+        );
+        ctx.shadowBlur = 0;
+      } else {
+        const pad = 1;
+        ctx.fillRect(
+          gx * CELL_SIZE + pad,
+          gy * CELL_SIZE + pad,
+          CELL_SIZE - pad * 2,
+          CELL_SIZE - pad * 2,
+        );
+      }
+    };
+
+    // ----- Animated food. Retro: rotating diamond ring; Modern: glowing
+    // circle with a halo.
     const drawFood = (now: number) => {
+      const pal = paletteRef.current;
+      const tn = themeRef.current;
       const f = foodRef.current;
       const cx = f.x * CELL_SIZE + CELL_SIZE / 2;
       const cy = f.y * CELL_SIZE + CELL_SIZE / 2;
@@ -115,7 +158,29 @@ export const GameCanvas: React.FC<Props> = ({
       // Continuous pulse (~1.2Hz).
       const pulse = 0.5 + 0.5 * Math.sin(now * 0.0075);
 
-      // Rotation.
+      if (tn === 'MODERN') {
+        const baseR = (CELL_SIZE / 2 - 1) * popScale;
+        const r = baseR * (0.78 + 0.18 * pulse);
+        ctx.save();
+        ctx.shadowColor = pal.canvasAccent;
+        ctx.shadowBlur = 16 + 6 * pulse;
+        ctx.fillStyle = pal.canvasAccent;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // Bright inner highlight.
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(cx - r * 0.25, cy - r * 0.3, r * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.restore();
+        return;
+      }
+
+      // Rotation (retro).
       const angle = (now * 0.0015) % (Math.PI * 2);
 
       const baseR = (CELL_SIZE / 2 - 2) * popScale;
@@ -126,8 +191,7 @@ export const GameCanvas: React.FC<Props> = ({
       ctx.translate(cx, cy);
       ctx.rotate(angle);
 
-      // Outer rotating diamond.
-      ctx.fillStyle = COLOR_FG;
+      ctx.fillStyle = pal.canvasFg;
       ctx.beginPath();
       ctx.moveTo(0, -outerR);
       ctx.lineTo(outerR, 0);
@@ -136,9 +200,8 @@ export const GameCanvas: React.FC<Props> = ({
       ctx.closePath();
       ctx.fill();
 
-      // Hollow center, so it reads as a ring.
       const holeR = outerR * 0.55;
-      ctx.fillStyle = COLOR_BG;
+      ctx.fillStyle = pal.canvasBg;
       ctx.beginPath();
       ctx.moveTo(0, -holeR);
       ctx.lineTo(holeR, 0);
@@ -147,8 +210,7 @@ export const GameCanvas: React.FC<Props> = ({
       ctx.closePath();
       ctx.fill();
 
-      // Pulsing solid core.
-      ctx.fillStyle = COLOR_FG;
+      ctx.fillStyle = pal.canvasFg;
       ctx.beginPath();
       ctx.moveTo(0, -innerR);
       ctx.lineTo(innerR, 0);
@@ -159,13 +221,12 @@ export const GameCanvas: React.FC<Props> = ({
 
       ctx.restore();
 
-      // Sparkle: small dot orbiting just outside the food.
       const sparkleAngle = -angle * 1.7;
       const sparkleR = baseR + 3;
       const sx = cx + Math.cos(sparkleAngle) * sparkleR;
       const sy = cy + Math.sin(sparkleAngle) * sparkleR;
       const sparkleSize = 1.5 + 1.5 * pulse;
-      ctx.fillStyle = COLOR_FG;
+      ctx.fillStyle = pal.canvasFg;
       ctx.fillRect(
         sx - sparkleSize / 2,
         sy - sparkleSize / 2,
@@ -175,31 +236,59 @@ export const GameCanvas: React.FC<Props> = ({
     };
 
     const drawFrame = (now: number) => {
+      const pal = paletteRef.current;
+      const tn = themeRef.current;
       const snk = snakeRef.current;
       const st = statusRef.current;
       const sc = scoreRef.current;
 
-      // LCD background
-      ctx.fillStyle = COLOR_BG;
+      // Background
+      ctx.fillStyle = pal.canvasBg;
       ctx.fillRect(0, 0, CANVAS_PIXEL_SIZE, CANVAS_PIXEL_SIZE);
 
-      // Subtle pixel-grid dots
-      ctx.fillStyle = COLOR_BG_DIM;
-      for (let y = 0; y < GRID_ROWS; y++) {
-        for (let x = 0; x < GRID_COLS; x++) {
-          ctx.fillRect(
-            x * CELL_SIZE + CELL_SIZE / 2 - 1,
-            y * CELL_SIZE + CELL_SIZE / 2 - 1,
-            2,
-            2,
-          );
+      if (tn === 'MODERN') {
+        // Faint grid lines.
+        ctx.strokeStyle = pal.canvasDim;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 1; i < GRID_COLS; i++) {
+          ctx.moveTo(i * CELL_SIZE + 0.5, 0);
+          ctx.lineTo(i * CELL_SIZE + 0.5, CANVAS_PIXEL_SIZE);
+        }
+        for (let i = 1; i < GRID_ROWS; i++) {
+          ctx.moveTo(0, i * CELL_SIZE + 0.5);
+          ctx.lineTo(CANVAS_PIXEL_SIZE, i * CELL_SIZE + 0.5);
+        }
+        ctx.stroke();
+      } else {
+        // Subtle pixel-grid dots.
+        ctx.fillStyle = pal.canvasDim;
+        for (let y = 0; y < GRID_ROWS; y++) {
+          for (let x = 0; x < GRID_COLS; x++) {
+            ctx.fillRect(
+              x * CELL_SIZE + CELL_SIZE / 2 - 1,
+              y * CELL_SIZE + CELL_SIZE / 2 - 1,
+              2,
+              2,
+            );
+          }
         }
       }
 
       // Frame
-      ctx.strokeStyle = COLOR_FG;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(1, 1, CANVAS_PIXEL_SIZE - 2, CANVAS_PIXEL_SIZE - 2);
+      if (tn === 'MODERN') {
+        ctx.save();
+        ctx.shadowColor = pal.canvasFg;
+        ctx.shadowBlur = 10;
+        ctx.strokeStyle = pal.canvasFg;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, CANVAS_PIXEL_SIZE - 2, CANVAS_PIXEL_SIZE - 2);
+        ctx.restore();
+      } else {
+        ctx.strokeStyle = pal.canvasFg;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, CANVAS_PIXEL_SIZE - 2, CANVAS_PIXEL_SIZE - 2);
+      }
 
       drawFood(now);
 
@@ -240,14 +329,14 @@ export const GameCanvas: React.FC<Props> = ({
         if (img.complete && img.naturalWidth > 0) {
           ctx.drawImage(img, drawX, drawY, obSize, obSize);
         } else {
-          ctx.fillStyle = COLOR_FG;
+          ctx.fillStyle = pal.canvasFg;
           ctx.fillRect(cellX + 1, cellY + 1, CELL_SIZE - 2, CELL_SIZE - 2);
         }
         const remaining = ob.expiresAt - Date.now();
         if (remaining < 3000) {
           const flash = Math.sin(now * 0.02) > 0;
           if (flash) {
-            ctx.strokeStyle = COLOR_FG;
+            ctx.strokeStyle = pal.canvasFg;
             ctx.lineWidth = 1;
             ctx.strokeRect(drawX + 0.5, drawY + 0.5, obSize - 1, obSize - 1);
           }
@@ -275,8 +364,8 @@ export const GameCanvas: React.FC<Props> = ({
             ? drawY - bubbleH - tailH
             : drawY + obSize + tailH;
 
-          ctx.fillStyle = COLOR_BG;
-          ctx.strokeStyle = COLOR_FG;
+          ctx.fillStyle = pal.canvasBg;
+          ctx.strokeStyle = pal.canvasFg;
           ctx.lineWidth = 1;
           ctx.fillRect(bubbleX, bubbleY, bubbleW, bubbleH);
           ctx.strokeRect(
@@ -301,12 +390,12 @@ export const GameCanvas: React.FC<Props> = ({
             ctx.lineTo(tailCx, bubbleY - tailH);
           }
           ctx.closePath();
-          ctx.fillStyle = COLOR_BG;
+          ctx.fillStyle = pal.canvasBg;
           ctx.fill();
-          ctx.strokeStyle = COLOR_FG;
+          ctx.strokeStyle = pal.canvasFg;
           ctx.stroke();
 
-          ctx.fillStyle = COLOR_FG;
+          ctx.fillStyle = pal.canvasFg;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(
@@ -331,13 +420,18 @@ export const GameCanvas: React.FC<Props> = ({
         const pad = 3;
         const size = CELL_SIZE - pad * 2;
         const offset = 2;
-        ctx.fillStyle = COLOR_FG;
+        ctx.fillStyle = pal.canvasFg;
+        if (tn === 'MODERN') {
+          ctx.shadowColor = pal.canvasFg;
+          ctx.shadowBlur = 6;
+        }
         ctx.fillRect(
           tail.x * CELL_SIZE + pad + d.x * offset,
           tail.y * CELL_SIZE + pad + d.y * offset,
           size,
           size,
         );
+        ctx.shadowBlur = 0;
       }
 
       // Head: full block with two "eyes" on the leading edge.
@@ -360,7 +454,7 @@ export const GameCanvas: React.FC<Props> = ({
             hcx + face.x * forward + perp.x * side * sign - eyeSize / 2;
           const ey =
             hcy + face.y * forward + perp.y * side * sign - eyeSize / 2;
-          ctx.fillStyle = COLOR_BG;
+          ctx.fillStyle = pal.canvasBg;
           ctx.fillRect(ex, ey, eyeSize, eyeSize);
         };
         drawEye(1);
@@ -369,10 +463,11 @@ export const GameCanvas: React.FC<Props> = ({
 
       // State overlays
       if (st !== 'RUNNING') {
-        ctx.fillStyle = 'rgba(26, 29, 20, 0.55)';
+        ctx.fillStyle =
+          tn === 'MODERN' ? 'rgba(5, 8, 16, 0.65)' : 'rgba(26, 29, 20, 0.55)';
         ctx.fillRect(0, 0, CANVAS_PIXEL_SIZE, CANVAS_PIXEL_SIZE);
 
-        ctx.fillStyle = COLOR_BG;
+        ctx.fillStyle = tn === 'MODERN' ? pal.canvasAccent : pal.canvasBg;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 

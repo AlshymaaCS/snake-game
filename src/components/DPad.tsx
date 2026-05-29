@@ -1,5 +1,5 @@
 import React from 'react';
-import { styles } from '../styles';
+import { useTheme } from '../ThemeContext';
 import type { Direction } from '../types';
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
 
 /** Mobile-friendly D-Pad. Uses touchStart for snappy taps without ghost-clicks. */
 export const DPad: React.FC<Props> = ({ onDirection, onCenter }) => {
+  const { styles } = useTheme();
   const handleTouch = (dir: Direction) => (e: React.TouchEvent) => {
     e.preventDefault();
     onDirection(dir);
@@ -22,8 +23,7 @@ export const DPad: React.FC<Props> = ({ onDirection, onCenter }) => {
         style={styles.dpadBtn}
         onClick={handleClick('UP')}
         onTouchStart={handleTouch('UP')}
-        aria-label="Up"
-      >
+        aria-label="Up">
         ▲
       </button>
       <span />
@@ -31,19 +31,20 @@ export const DPad: React.FC<Props> = ({ onDirection, onCenter }) => {
         style={styles.dpadBtn}
         onClick={handleClick('LEFT')}
         onTouchStart={handleTouch('LEFT')}
-        aria-label="Left"
-      >
+        aria-label="Left">
         ◀
       </button>
-      <button style={styles.dpadCenter} onClick={onCenter} aria-label="Start/Pause">
+      <button
+        style={styles.dpadCenter}
+        onClick={onCenter}
+        aria-label="Start/Pause">
         ●
       </button>
       <button
         style={styles.dpadBtn}
         onClick={handleClick('RIGHT')}
         onTouchStart={handleTouch('RIGHT')}
-        aria-label="Right"
-      >
+        aria-label="Right">
         ▶
       </button>
       <span />
@@ -51,8 +52,7 @@ export const DPad: React.FC<Props> = ({ onDirection, onCenter }) => {
         style={styles.dpadBtn}
         onClick={handleClick('DOWN')}
         onTouchStart={handleTouch('DOWN')}
-        aria-label="Down"
-      >
+        aria-label="Down">
         ▼
       </button>
       <span />

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { styles } from '../styles';
+import { useTheme } from '../ThemeContext';
 
 interface Props {
   score: number;
@@ -8,6 +8,7 @@ interface Props {
 }
 
 export const NamePrompt: React.FC<Props> = ({ score, onSubmit, onCancel }) => {
+  const { styles } = useTheme();
   const [name, setName] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
 

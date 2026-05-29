@@ -1,5 +1,5 @@
 import React from 'react';
-import { styles } from '../styles';
+import { useTheme } from '../ThemeContext';
 import type { GameMode } from '../types';
 
 interface Props {
@@ -16,16 +16,22 @@ export const Controls: React.FC<Props> = ({
   onStartPause,
   onRestart,
   onToggleMode,
-}) => (
-  <div style={styles.controlsRow}>
-    <button style={styles.btn} onClick={onStartPause}>
-      {startPauseLabel}
-    </button>
-    <button style={styles.btn} onClick={onRestart}>
-      Restart
-    </button>
-    <button style={styles.btnGhost} onClick={onToggleMode}>
-      Mode: {mode === 'CLASSIC' ? 'Classic' : 'Wrap'}
-    </button>
-  </div>
-);
+}) => {
+  const { styles, themeName, toggleTheme } = useTheme();
+  return (
+    <div style={styles.controlsRow}>
+      <button style={styles.btn} onClick={onStartPause}>
+        {startPauseLabel}
+      </button>
+      <button style={styles.btn} onClick={onRestart}>
+        Restart
+      </button>
+      <button style={styles.btnGhost} onClick={onToggleMode}>
+        Mode: {mode === 'CLASSIC' ? 'Classic' : 'Wrap'}
+      </button>
+      <button style={styles.btnGhost} onClick={toggleTheme}>
+        Theme: {themeName === 'RETRO' ? 'Retro' : 'Modern'}
+      </button>
+    </div>
+  );
+};

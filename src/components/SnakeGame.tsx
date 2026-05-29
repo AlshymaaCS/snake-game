@@ -22,7 +22,7 @@ import { useKeyboardControls } from '../hooks/useKeyboardControls';
 import { useLeaderboard } from '../hooks/useLeaderboard';
 import { useEatSound } from '../hooks/useEatSound';
 import { useSounds } from '../hooks/useSounds';
-import { styles } from '../styles';
+import { useTheme } from '../ThemeContext';
 import type {
   Direction,
   GameMode,
@@ -41,6 +41,7 @@ import { NamePrompt } from './NamePrompt';
 import { Scoreboard } from './Scoreboard';
 
 export const SnakeGame: React.FC = () => {
+  const { styles, themeName, palette } = useTheme();
   // ---------- Game state ----------
   const [snake, setSnake] = useState<Point[]>(initialSnake);
   const [food, setFood] = useState<Point>(() => randomFood(initialSnake()));
@@ -359,7 +360,7 @@ export const SnakeGame: React.FC = () => {
     <div style={styles.wrap}>
       <div style={styles.shell}>
         <div style={styles.brandBar}>
-          <span style={styles.brand}>NOTKIA</span>
+          <span style={styles.brand}>{palette.brandLabel}</span>
         </div>
         <div style={styles.screenBezel}>
           <Scoreboard score={score} highScore={highScore} mode={mode} />
@@ -372,6 +373,8 @@ export const SnakeGame: React.FC = () => {
               boostActive={boostActive}
               status={status}
               score={score}
+              themeName={themeName}
+              palette={palette}
             />
             {status === 'IDLE' && (
               <div style={styles.canvasLeaderboardOverlay}>
